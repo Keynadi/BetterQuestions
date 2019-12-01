@@ -6,15 +6,13 @@ import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
 public class JsonFormatter {
     private BQMain plugin;
 
-    public JsonFormatter(BQMain plugin)
-    {
+    public JsonFormatter(BQMain plugin) {
         this.plugin = plugin;
     }
 
@@ -85,12 +83,12 @@ public class JsonFormatter {
             TextComponent text = new TextComponent(confirmed);
             text.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/bq answer " + answer));
             text.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Send " + ChatColor.AQUA + confirmed + ChatColor.WHITE + " as an answer.").create()));
-            if(extra != 0)str.addExtra(ChatColor.WHITE + " | ");
+            if (extra != 0) str.addExtra(ChatColor.WHITE + " | ");
             str.addExtra(text);
             extra++;
         }
 
-        if(plugin.getConfig().getBoolean("centering") == true){
+        if (plugin.getConfig().getBoolean("centering") == true) {
             sendCenteredMessage(p, cal, str);
         } else {
             p.spigot().sendMessage(str);
@@ -108,7 +106,7 @@ public class JsonFormatter {
         str.addExtra(string);
 
         p.sendMessage("");
-        if(plugin.getConfig().getBoolean("centering") == true){
+        if (plugin.getConfig().getBoolean("centering") == true) {
             sendCenteredMessage(p, cal, str);
         } else {
             p.spigot().sendMessage(str);
