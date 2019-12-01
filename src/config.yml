@@ -1,0 +1,16 @@
+# +------------------+
+# |                  |
+# | Plugin coded by  |
+# |     Keynadi      |
+# |                  |
+# +------------------+
+#
+# ! Every duration have to be in minecraft ticks !
+#
+#Delay before sending vote message
+#20 ticks = 1 second
+delay: 100
+#Centering text in a Minecraft chat
+#true of false
+#Default = true
+centering: true
