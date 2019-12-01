@@ -56,7 +56,6 @@ class Commands implements CommandExecutor, Serializable {
                 }
                 if (players != null) {
                     playersArray = (players.getAsJsonArray("Players"));
-                    Bukkit.broadcastMessage(playersArray.toString());
                 }
                 JsonElement JsonUUID = new JsonParser().parse(UUID.toString());
                 if (playersArray == null || !playersArray.contains(JsonUUID)) {
