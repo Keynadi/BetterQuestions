@@ -13,10 +13,12 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
+import org.json.simple.JSONArray;
 
 import java.awt.*;
 import java.io.File;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.UUID;
 
 class Commands implements CommandExecutor, Serializable {
@@ -30,7 +32,6 @@ class Commands implements CommandExecutor, Serializable {
     private JsonObject players = new JsonObject();
     private boolean run = false;
     private BukkitTask runnable;
-    private JsonArray playersArray = new JsonArray();
 
     public Commands(BQMain plugin, JsonFormatter formatter)
     {
@@ -52,12 +53,16 @@ class Commands implements CommandExecutor, Serializable {
         if(args[0].equalsIgnoreCase("answer")){
             if(args.length > 1 && args[1] != null){
                 UUID UUID = Bukkit.getPlayer(p.getName()).getUniqueId();
+                JsonArray playersArray = new JsonArray();
                 try {
                     players = (JsonObject) Saver.load(plugin.getDataFolder() + File.separator + "players.json");
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                playersArray.add(players.getAsJsonArray("Players"));
+                if(players != null){
+                    playersArray = (players.getAsJsonArray("Players"));
+                    Bukkit.broadcastMessage(playersArray.toString());
+                }
                 JsonElement JsonUUID = new JsonParser().parse(UUID.toString());
                 if(playersArray == null || !playersArray.contains(JsonUUID)){
                     playersArray.add(String.valueOf(UUID));
@@ -67,6 +72,7 @@ class Commands implements CommandExecutor, Serializable {
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
+                    p.sendMessage(ChatColor.GREEN + "You successfully voted!");
                 } else {
                     p.sendMessage(ChatColor.RED + "You already voted!");
                     return true;
@@ -189,20 +195,26 @@ class Commands implements CommandExecutor, Serializable {
     }
 
     private void run(){
-
-        try {
-            obj = (JsonObject) Saver.load(plugin.getDataFolder() + File.separator + "data.json");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        JsonArray array = obj.getAsJsonArray("Answers");
-
         runnable = new BukkitRunnable() {
             @Override
             public void run() {
+                JsonArray playersrunarray = new JsonArray();
+                try {
+                    obj = (JsonObject) Saver.load(plugin.getDataFolder() + File.separator + "data.json");
+                    players = (JsonObject) Saver.load(plugin.getDataFolder() + File.separator + "players.json");
+                    playersrunarray = players.getAsJsonArray("Players");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                JsonArray array = obj.getAsJsonArray("Answers");
+
                 for(Player p : Bukkit.getOnlinePlayers()){
-                    formatter.centrify(String.valueOf(obj.get("Question")), p);
-                    formatter.format(array, p);
+                    String pstr = p.getName();
+                    if(!playersrunarray.contains(new JsonParser().parse(String.valueOf(Bukkit.getPlayer(pstr).getUniqueId())))){
+                        formatter.centrify(String.valueOf(obj.get("Question")), p);
+                        formatter.format(array, p);
+                    }
+
                 }
             }
         }.runTaskTimer(plugin, 0, plugin.getConfig().getInt("delay"));
