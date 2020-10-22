@@ -1,67 +1,66 @@
 package me.keynadi.BetterQuestions;
 
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public class Listener implements org.bukkit.event.Listener {
 
     private Commands commands;
-    private BQMain plugin;
+    private BQMain main;
     private JsonObject obj = new JsonObject();
     private int times = 1;
 
-    public Listener(BQMain plugin, Commands commands) {
-        this.plugin = plugin;
-        this.commands = commands;
+    public Listener(BQMain main) {
+        this.main = main;
     }
 
 
     @EventHandler
     public void onChat(AsyncPlayerChatEvent e) {
         Player sender = e.getPlayer();
-        String sendername = sender.getName();
-        if (commands.chat() == true) {
-            UUID UUID = Bukkit.getPlayer(sendername).getUniqueId();
-            if (sendername.equalsIgnoreCase(plugin.getlist().get(UUID))) {
+        //Ok here is the tricky part. I have a list in Main class that contains players that used /bq create and waiting for chat message. //If two players  at one will try to create a question it will probably create a problem
+        if (BQMain.waitingChatMessage.contains(sender.getUniqueId())) {
+            int questionsCount = 1;
+            UUID UUID = sender.getUniqueId();
                 String message = e.getMessage();
+            FileConfiguration questionsConfig = main.getQuestionsConfig();
+            while (questionsConfig.getString(questionsCount + ".question") != null) {
+                questionsCount++;
+            }
                 if (times == 1) {
-                    obj = new JsonObject();
-                    obj.addProperty("Question", message);
+                    main.getQuestionsConfig().set(questionsCount + ".question", message);
+
                     times++;
                     e.setCancelled(true);
-                    sender.sendTitle(ChatColor.GREEN + "Send your asnwers in chat", "Example: Yes, No, Maybe", 10, 60, 10);
+                    sender.sendTitle(main.getConfig().getString("messages.title.sendanswerschat").replace("&", "§"), main.getConfig().getString("messages.title.answerssecondline").replace("&", "§"), 10, 60, 10);
                 } else {
+                    questionsCount--;
                     String[] str = message.split("\\s*,\\s*");
-                    JsonArray array = new JsonArray();
+                    List<String> answers = new ArrayList<>();
                     for (String part : str) {
-                        obj.addProperty(part, 0);
-                        array.add(part);
+                        answers.add(part);
                     }
 
                     times = 1;
-                    commands.changeChat();
-                    obj.add("Answers", array);
+                    BQMain.waitingChatMessage.remove(UUID);
+                    main.getQuestionsConfig().set(questionsCount + ".answers", answers);
+                    sender.sendTitle(main.getConfig().getString("messages.title.questioncreated").replace("&", "§"), main.getConfig().getString("messages.title.questioncreatedsecondline").replace("&", "§"), 10, 60, 10);
+                    try {
+                        main.getQuestionsConfig().save(main.getDataFolder() + File.separator + "questions.yml");
+                    } catch (IOException questionConfigException) {
+                        questionConfigException.printStackTrace();
+                    }
                     e.setCancelled(true);
                 }
-
-                try {
-                    Saver.save(obj, plugin.getDataFolder() + File.separator + "data.json");
-                } catch (Exception except) {
-                    except.printStackTrace();
-                }
-
-            }
-        } else {
-            times = 1;
         }
     }
-
 }

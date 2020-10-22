@@ -1,108 +1,137 @@
 package me.keynadi.BetterQuestions;
 
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.Configuration;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
 
-import java.io.File;
-import java.io.Serializable;
-import java.util.UUID;
+import java.io.*;
+import java.util.*;
 
 class Commands implements CommandExecutor, Serializable {
-    private BQMain plugin;
-    private JsonFormatter formatter;
+    private BQMain main;
 
     private static boolean chat = false;
     private CommandSender p;
     private String sender;
     private JsonObject obj;
     private JsonObject players = new JsonObject();
-    private boolean run = false;
-    private BukkitTask runnable;
+    private JsonArray playersArray = new JsonArray();
 
-    public Commands(BQMain plugin, JsonFormatter formatter) {
-        this.plugin = plugin;
-        this.formatter = formatter;
+    public Commands(BQMain main) {
+        this.main = main;
     }
 
     @Override
     public boolean onCommand(CommandSender p, Command command, String s, String[] args) {
 
+        Player player = (Player) p;
+
+        Configuration config = main.getConfig();
+
         if (args.length == 0) {
             if (!p.hasPermission("betterquestions.admin")) {
-                p.sendMessage(ChatColor.RED + "You don't have permissions to do that!");
+                p.sendMessage(config.getString("messages.nopermissions").replace("&", "§"));
                 return true;
             }
             return false;
         }
 
         if (args[0].equalsIgnoreCase("answer")) {
-            if (args.length > 1 && args[1] != null) {
-                UUID UUID = Bukkit.getPlayer(p.getName()).getUniqueId();
-                JsonArray playersArray = new JsonArray();
-                try {
-                    players = (JsonObject) Saver.load(plugin.getDataFolder() + File.separator + "players.json");
-                } catch (Exception e) {
-                    e.printStackTrace();
+            if (args.length > 1 && args[1] != null && args[2] != null) {
+                String UUID = player.getUniqueId().toString();
+
+                String answer = "";
+
+                int argscount = 2;
+
+                while (argscount <= (args.length - 1)) {
+                    answer = answer + " " + args[argscount];
+                    argscount++;
                 }
-                if (players != null) {
-                    playersArray = (players.getAsJsonArray("Players"));
-                }
-                JsonElement JsonUUID = new JsonParser().parse(UUID.toString());
-                if (playersArray == null || !playersArray.contains(JsonUUID)) {
-                    playersArray.add(String.valueOf(UUID));
-                    players.add("Players", playersArray);
-                    try {
-                        Saver.save(players, plugin.getDataFolder() + File.separator + "players.json");
-                        ;
-                    } catch (Exception e) {
-                        e.printStackTrace();
+
+                answer = answer.substring(1);
+
+                if (config.getInt("playersdatasavetype") == 1) {
+                    FileConfiguration playersConfig = main.getPlayersConfig();
+                    List<Object> playerslist = (List<Object>) playersConfig.getList(args[1] + ".players");
+
+                    if (playerslist == null) playerslist = new ArrayList<>();
+
+                    if (playerslist != null && playerslist.contains(UUID)) {
+                        p.sendMessage(config.getString("messages.alreadyvoted").replace("&", "§"));
+                        return true;
                     }
-                    p.sendMessage(ChatColor.GREEN + "You successfully voted!");
-                } else {
-                    p.sendMessage(ChatColor.RED + "You already voted!");
-                    return true;
-                }
 
-                try {
-                    obj = (JsonObject) Saver.load(plugin.getDataFolder() + File.separator + "data.json");
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                String arg = args[1];
-                int i = 2;
-                while (args.length > i && args[i] != null) {
-                    arg = arg + " " + args[i];
-                    i++;
-                }
+                    playerslist.add(UUID);
 
-                if (obj.has(arg)) {
-                    int num = Integer.valueOf(String.valueOf(obj.get(arg)));
-                    num++;
-                    obj.addProperty(arg, num);
+                    playersConfig.set(args[1] + ".players", playerslist);
                     try {
-                        Saver.save(obj, plugin.getDataFolder() + File.separator + "data.json");
-                    } catch (Exception e) {
+                        playersConfig.save(main.getDataFolder() + File.separator + "players.yml");
+                    } catch (IOException e) {
                         e.printStackTrace();
                     }
                 } else {
-                    p.sendMessage(ChatColor.RED + "Error. Please, contact server Administrator.");
+                    //I don't really like this code, but I guess it's works
+                    File playerUUIDFile = new File(main.getDataFolder() + File.separator + "players", UUID + ".yml");
+
+                    List<String> questionsList = new ArrayList<>();
+
+                    if (playerUUIDFile.exists()) {
+                        Scanner scanner = null;
+                        try {
+                            scanner = new Scanner(playerUUIDFile);
+                        } catch (FileNotFoundException e) {
+                            e.printStackTrace();
+                        }
+
+                        while (scanner.hasNextLine()) {
+                            questionsList.add(scanner.nextLine());
+                        }
+                    }
+                    if (questionsList.contains(args[1])) {
+                        p.sendMessage(config.getString("messages.alreadyvoted").replace("&", "§"));
+                        return true;
+                    } else {
+                        questionsList.add(args[1]);
+                        try {
+                            FileWriter stream = new FileWriter(playerUUIDFile);
+                            BufferedWriter out = new BufferedWriter(stream);
+
+                            for (String answeredQuestion : questionsList) {
+                                out.write(answeredQuestion);
+                                out.newLine();
+                            }
+                            out.close();
+                            stream.close();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
                 }
+
+                FileConfiguration questionsConfig = main.getQuestionsConfig();
+
+                questionsConfig.set(args[1] + ".answersresults." + answer, questionsConfig.getInt(args[1] + ".answersresults." + answer) + 1);
+
+                try {
+                    questionsConfig.save(main.getDataFolder() + File.separator + "questions.yml");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                p.sendMessage(config.getString("messages.successfulvote").replace("&", "§"));
             }
             return true;
         }
 
         if (!p.hasPermission("betterquestions.admin")) {
-            p.sendMessage(ChatColor.RED + "You don't have permissions to do that!");
+            p.sendMessage(config.getString("messages.nopermissions").replace("&", "§"));
             return true;
         }
 
@@ -111,109 +140,148 @@ class Commands implements CommandExecutor, Serializable {
         }
 
         if (args[0].equalsIgnoreCase("help") || args[0].equalsIgnoreCase("?")) {
-            p.sendMessage(("&f/bq create - &ccreate new question\n" +
-                    "&f/bq on|off - &cturn on/off plugin notifies for player\n" +
-                    "&f/bq rl - &creload configuration file\n" +
-                    "&f/bq view - &cview question statistic").replace("&", "§"));
+            p.sendMessage(config.getString("messages.help").replace("&", "§"));
             return true;
         }
         if (args[0].equalsIgnoreCase("create")) {
-            chat = true;
 
             sender = p.getName();
             UUID UUID = Bukkit.getPlayer(sender).getUniqueId();
 
-            Bukkit.getPlayer(UUID).sendTitle(ChatColor.GREEN + "Send your question in chat", "", 10, 80, 10);
-            ;
+            BQMain.waitingChatMessage.add(UUID);
 
-            plugin.getlist().put(UUID, sender);
+            Bukkit.getPlayer(UUID).sendTitle(config.getString("messages.title.sendquestionchat").replace("&", "§"), "", 10, 80, 10);
+
             return true;
         }
+
+
         if (args[0].equalsIgnoreCase("on")) {
-            if (run == false) {
-                run = true;
-                run();
-                p.sendMessage(ChatColor.GREEN + "Questions are now broadcasting.");
+            if (!config.getBoolean("active")) {
+                config.set("active", true);
+                main.saveConfig();
+                new Timer(main).runTaskTimer(main, 0, config.getInt("delay"));
+                p.sendMessage(config.getString("messages.nowbroadcasting").replace("&", "§"));
             } else {
-                p.sendMessage(ChatColor.RED + "Nothing happened. Questions already broadcasting.");
+                p.sendMessage(config.getString("messages.alreadybroadcasting").replace("&", "§"));
             }
             return true;
         }
         if (args[0].equalsIgnoreCase("off")) {
-            if (run == true) {
-                p.sendMessage(ChatColor.GREEN + "Questions no longer broadcasting.");
-                run = false;
-                runnable.cancel();
+            if (config.getBoolean("active")) {
+                config.set("active", false);
+                main.saveConfig();
+                p.sendMessage(config.getString("messages.nolongerbroadcasting").replace("&", "§"));
             } else {
-                p.sendMessage(ChatColor.RED + "Nothing happened. Questions weren't broadcasting.");
+                p.sendMessage(config.getString("messages.alreadystoppedbroadcasting").replace("&", "§"));
             }
             return true;
         }
 
         if (args[0].equalsIgnoreCase("reload") || args[0].equalsIgnoreCase("rl")) {
-            plugin.reloadConfig();
-            p.sendMessage(ChatColor.GREEN + "Config has been reloaded!");
+            main.reloadConfig();
+            main.reloadQuestionConfig();
+            main.reloadPlayersConfig();
+            p.sendMessage(config.getString("messages.reload").replace("&", "§"));
             return true;
         }
 
         if (args[0].equalsIgnoreCase("view")) {
-            try {
-                obj = (JsonObject) Saver.load(plugin.getDataFolder() + File.separator + "data.json");
-            } catch (Exception e) {
-                e.printStackTrace();
+            if (args.length < 2) {
+                p.sendMessage(config.getString("messages.usage.view").replace("&", "§"));
+                return true;
             }
-            JsonArray loop = obj.getAsJsonArray("Answers");
-            p.sendMessage("");
-            p.sendMessage(obj.get("Question").getAsString().replace("&", "§"));
+
+            FileConfiguration questionsConfig = main.getQuestionsConfig();
+
+            if (questionsConfig.getString(args[1] + ".question") == null) {
+                p.sendMessage(config.getString("messages.questionnotfound").replace("&", "§"));
+                return true;
+            }
+
+            String allMessage = "\n\n" + questionsConfig.getString(args[1] + ".question") + "\n\n";
+            
             int sum = 0;
-            for (JsonElement elem : loop) {
-                sum = sum + obj.get(elem.getAsString()).getAsInt();
+
+            //Pretty bad solution but I haven't find a way to make it more efficient
+            //TODO: Make it more efficient
+            for (Object answer : questionsConfig.getList(args[1] + ".answers")) {
+                sum += questionsConfig.getInt(args[1] + ".answersresults." + answer);
             }
-            p.sendMessage("");
-            double percent = 0;
-            for (JsonElement str : loop) {
-                percent = (100 * obj.get(str.getAsString()).getAsInt()) / sum;
-                p.sendMessage((str.getAsString() + " &f[" + obj.get(str.getAsString()) + "] " + "[" + percent + "%]").replace("&", "§"));
+
+            for (Object answer : questionsConfig.getList(args[1] + ".answers")) {
+                int votes = questionsConfig.getInt(args[1] + ".answersresults." + answer);
+                double percent = 0;
+                if (votes != 0) {
+                    percent = (100 * votes) / sum;
+                }
+                allMessage += answer + " [" + votes + "] [" + percent + "%]\n\n";
             }
-            p.sendMessage("");
+
+            p.sendMessage(allMessage);
             return true;
         }
 
-        return false;
-    }
+        if (args[0].equalsIgnoreCase("update")) {
+            if (args.length < 2) {
+                p.sendMessage(config.getString("messages.usage.update").replace("&", "§"));
+                return true;
+            }
 
-    public void changeChat() {
-        chat = false;
-    }
+            if (main.getConfig().getInt("playersdatasavetype") == 1) {
+                FileConfiguration playersConfig = main.getPlayersConfig();
 
-    public boolean chat() {
-        return chat;
-    }
-
-    private void run() {
-        runnable = new BukkitRunnable() {
-            @Override
-            public void run() {
-                JsonArray playersrunarray = new JsonArray();
+                playersConfig.set(args[1] + ".players", "");
                 try {
-                    obj = (JsonObject) Saver.load(plugin.getDataFolder() + File.separator + "data.json");
-                    players = (JsonObject) Saver.load(plugin.getDataFolder() + File.separator + "players.json");
-                    playersrunarray = players.getAsJsonArray("Players");
-                } catch (Exception e) {
+                    playersConfig.save(main.getDataFolder() + File.separator + "players.yml");
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
-                JsonArray array = obj.getAsJsonArray("Answers");
 
-                for (Player p : Bukkit.getOnlinePlayers()) {
-                    String pstr = p.getName();
-                    if (!playersrunarray.contains(new JsonParser().parse(String.valueOf(Bukkit.getPlayer(pstr).getUniqueId())))) {
-                        formatter.centrify(String.valueOf(obj.get("Question")), p);
-                        formatter.format(array, p);
+                p.sendMessage(main.getConfig().getString("messages.updatesuccessful").replace("&", "§"));
+                return true;
+
+            } else {
+                File dir = new File(main.getDataFolder() + File.separator + "players");
+                File[] directoryListing = dir.listFiles();
+                if (directoryListing != null) {
+                    for (File child : directoryListing) {
+                        try {
+
+                            List<String> answeredQuestionsList = new ArrayList<>();
+                            Scanner scanner = null;
+                            try {
+                                scanner = new Scanner(child);
+                            } catch (FileNotFoundException e) {
+                                e.printStackTrace();
+                            }
+
+                            while (scanner.hasNextLine()) {
+                                answeredQuestionsList.add(scanner.nextLine());
+                            }
+
+                            Collections.sort(answeredQuestionsList);
+
+                            FileWriter stream = new FileWriter(child);
+                            BufferedWriter out = new BufferedWriter(stream);
+
+                            for (String line : answeredQuestionsList) {
+                                if (line.equalsIgnoreCase(args[1])) continue;
+                                out.write(line);
+                                out.newLine();
+                            }
+                            out.close();
+                            stream.close();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     }
-
                 }
+                p.sendMessage(main.getConfig().getString("messages.updatesuccessful").replace("&", "§"));
+                return true;
             }
-        }.runTaskTimer(plugin, 0, plugin.getConfig().getInt("delay"));
+        }
+        return false;
     }
 
 }
