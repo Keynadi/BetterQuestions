@@ -13,7 +13,6 @@ import java.util.UUID;
 public class BQMain extends JavaPlugin {
 
     private File config;
-    private File players;
 
     public static ArrayList<UUID> waitingChatMessage = new ArrayList<>();
     private File questionsConfigFile;
@@ -27,7 +26,7 @@ public class BQMain extends JavaPlugin {
 
         config = new File(getDataFolder() + File.separator + "config.yml");
 
-        if(!config.exists()){
+        if (!config.exists()) {
             this.getConfig().options().copyDefaults(true);
             this.saveDefaultConfig();
         }
@@ -42,8 +41,7 @@ public class BQMain extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new Listener(this), this);
     }
 
-    public void onDisable()
-    {
+    public void onDisable() {
         getLogger().info("Plugin BetterQuestions by Keynadi turned off");
     }
 

@@ -9,11 +9,9 @@ import org.bukkit.entity.Player;
 
 public class JsonFormatter {
     private static BQMain main;
-    private static Configuration configuration;
 
     public JsonFormatter(BQMain main) {
         JsonFormatter.main = main;
-        configuration = main.getConfig();
     }
 
     public static void format(Player p, int questionCount) {
@@ -22,8 +20,6 @@ public class JsonFormatter {
 
         TextComponent mainstr = new TextComponent();
         TextComponent answersText = new TextComponent();
-
-        String cal = "";
 
         int delimitercount = 1; //Used to count until last needed delimiter. Fixing "Yes|No|" issue.
 

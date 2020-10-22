@@ -1,7 +1,5 @@
 package me.keynadi.BetterQuestions;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -16,12 +14,7 @@ import java.util.*;
 class Commands implements CommandExecutor, Serializable {
     private BQMain main;
 
-    private static boolean chat = false;
-    private CommandSender p;
     private String sender;
-    private JsonObject obj;
-    private JsonObject players = new JsonObject();
-    private JsonArray playersArray = new JsonArray();
 
     public Commands(BQMain main) {
         this.main = main;
@@ -200,7 +193,7 @@ class Commands implements CommandExecutor, Serializable {
             }
 
             String allMessage = "\n\n" + questionsConfig.getString(args[1] + ".question") + "\n\n";
-            
+
             int sum = 0;
 
             //Pretty bad solution but I haven't find a way to make it more efficient

@@ -1,6 +1,5 @@
 package me.keynadi.BetterQuestions;
 
-import com.google.gson.JsonObject;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -14,9 +13,7 @@ import java.util.UUID;
 
 public class Listener implements org.bukkit.event.Listener {
 
-    private Commands commands;
     private BQMain main;
-    private JsonObject obj = new JsonObject();
     private int times = 1;
 
     public Listener(BQMain main) {
@@ -31,36 +28,36 @@ public class Listener implements org.bukkit.event.Listener {
         if (BQMain.waitingChatMessage.contains(sender.getUniqueId())) {
             int questionsCount = 1;
             UUID UUID = sender.getUniqueId();
-                String message = e.getMessage();
+            String message = e.getMessage();
             FileConfiguration questionsConfig = main.getQuestionsConfig();
             while (questionsConfig.getString(questionsCount + ".question") != null) {
                 questionsCount++;
             }
-                if (times == 1) {
-                    main.getQuestionsConfig().set(questionsCount + ".question", message);
+            if (times == 1) {
+                main.getQuestionsConfig().set(questionsCount + ".question", message);
 
-                    times++;
-                    e.setCancelled(true);
-                    sender.sendTitle(main.getConfig().getString("messages.title.sendanswerschat").replace("&", "§"), main.getConfig().getString("messages.title.answerssecondline").replace("&", "§"), 10, 60, 10);
-                } else {
-                    questionsCount--;
-                    String[] str = message.split("\\s*,\\s*");
-                    List<String> answers = new ArrayList<>();
-                    for (String part : str) {
-                        answers.add(part);
-                    }
-
-                    times = 1;
-                    BQMain.waitingChatMessage.remove(UUID);
-                    main.getQuestionsConfig().set(questionsCount + ".answers", answers);
-                    sender.sendTitle(main.getConfig().getString("messages.title.questioncreated").replace("&", "§"), main.getConfig().getString("messages.title.questioncreatedsecondline").replace("&", "§"), 10, 60, 10);
-                    try {
-                        main.getQuestionsConfig().save(main.getDataFolder() + File.separator + "questions.yml");
-                    } catch (IOException questionConfigException) {
-                        questionConfigException.printStackTrace();
-                    }
-                    e.setCancelled(true);
+                times++;
+                e.setCancelled(true);
+                sender.sendTitle(main.getConfig().getString("messages.title.sendanswerschat").replace("&", "§"), main.getConfig().getString("messages.title.answerssecondline").replace("&", "§"), 10, 60, 10);
+            } else {
+                questionsCount--;
+                String[] str = message.split("\\s*,\\s*");
+                List<String> answers = new ArrayList<>();
+                for (String part : str) {
+                    answers.add(part);
                 }
+
+                times = 1;
+                BQMain.waitingChatMessage.remove(UUID);
+                main.getQuestionsConfig().set(questionsCount + ".answers", answers);
+                sender.sendTitle(main.getConfig().getString("messages.title.questioncreated").replace("&", "§"), main.getConfig().getString("messages.title.questioncreatedsecondline").replace("&", "§"), 10, 60, 10);
+                try {
+                    main.getQuestionsConfig().save(main.getDataFolder() + File.separator + "questions.yml");
+                } catch (IOException questionConfigException) {
+                    questionConfigException.printStackTrace();
+                }
+                e.setCancelled(true);
+            }
         }
     }
 }
