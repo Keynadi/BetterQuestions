@@ -1,0 +1,9 @@
+main: me.keynadi.BetterQuestions.BQMain
+name: BetterQuestions
+author: Keynadi
+version: 2.1
+commands:
+  betterquestions:
+    aliases: [bq]
+    description: BetterQuestions command.
+    usage: /bq help

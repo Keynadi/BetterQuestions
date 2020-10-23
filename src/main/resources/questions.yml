@@ -1,0 +1,8 @@
+1:
+  question: "Do you like BetterQuestions?"
+  answers:
+    - "Yes :)"
+    - "No :("
+  answersresults:
+    "Yes :)": 0
+    "No :(": 0
