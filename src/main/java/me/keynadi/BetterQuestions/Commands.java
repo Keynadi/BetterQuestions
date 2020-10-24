@@ -36,9 +36,6 @@ class Commands implements CommandExecutor, Serializable {
 
         Player player = (Player) p;
 
-
-        p.sendMessage(args);
-
         Configuration config = main.getConfig();
 
         if (args.length == 0) {
@@ -221,9 +218,14 @@ class Commands implements CommandExecutor, Serializable {
 
             //Pretty bad solution but I haven't find a way to make it more efficient
             //TODO: Make it more efficient
+
+            List<String> alreadyLoopedAnswers = new ArrayList<>(); //Fixes votes doubling when there is two answers with different colors. This answers still counts as one but in /bq view it was a two answers with same number of votes
             for (Object answer : questionsConfig.getList(args[1] + ".answers")) {
                 answer = answer.toString().replaceAll("&[0-9A-Fa-f]", "");
-                sum += questionsConfig.getInt(args[1] + ".answersresults." + answer);
+                if (alreadyLoopedAnswers == null || !alreadyLoopedAnswers.contains(answer)) {
+                    sum += questionsConfig.getInt(args[1] + ".answersresults." + answer);
+                    alreadyLoopedAnswers.add(answer.toString());
+                }
             }
 
             for (Object answer : questionsConfig.getList(args[1] + ".answers")) {
