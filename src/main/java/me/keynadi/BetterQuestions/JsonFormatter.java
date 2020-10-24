@@ -29,8 +29,8 @@ public class JsonFormatter {
 
         for (Object answer : questionConfig.getList(questionCount + ".answers")) {
 
-            TextComponent text = new TextComponent(answer.toString());
-            text.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/bq answer " + questionCount + " " + answer));
+            TextComponent text = new TextComponent(answer.toString().replace("&", "§"));
+            text.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/bq answer " + questionCount + " " + answer.toString()));
             text.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder(main.getConfig().getString("messages.hoveranswertext").replace("%answer%", answer.toString()).replace("&", "§")).create()));
 
             answersText.addExtra(text);
@@ -40,7 +40,7 @@ public class JsonFormatter {
             delimitercount++;
         }
 
-        String layout = (main.getConfig().getString("layout").replace("%question%", questionConfig.getString(questionCount + ".question")).replace("&", "§"));
+        String layout = (main.getConfig().getString("layout").replace("%question%", "§f" + questionConfig.getString(questionCount + ".question")).replace("&", "§"));
         String[] layoutCutArray = layout.split("%answers%");
 
         mainstr.addExtra(layoutCutArray[0]);

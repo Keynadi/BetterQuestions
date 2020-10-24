@@ -24,6 +24,7 @@ messages:
   nolongerbroadcasting: "&aQuestions no longer broadcasting."
   alreadybroadcasting: "&cNothing happened. Questions already broadcasting."
   alreadystoppedbroadcasting: "&cNothing happened. Questions weren't broadcasting."
+  noanswer: "&cThe is not such answer to that question"
   reload: "&aConfig has been reloaded!"
   hoveranswertext: "&fSend &b%answer% &fas an answer." #Answer in chat hover
   questionnotfound: "&cThere is no question with this number"

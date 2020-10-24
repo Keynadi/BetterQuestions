@@ -20,10 +20,24 @@ class Commands implements CommandExecutor, Serializable {
         this.main = main;
     }
 
+    //shenanigans!!!
+    public static boolean ifContains(List<String> list, String string) {
+        for (String line : list) {
+            line = line.replaceAll("&[0-9A-Fa-f]", "");
+            if (line.equalsIgnoreCase(string)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     public boolean onCommand(CommandSender p, Command command, String s, String[] args) {
 
         Player player = (Player) p;
+
+
+        p.sendMessage(args);
 
         Configuration config = main.getConfig();
 
@@ -37,6 +51,7 @@ class Commands implements CommandExecutor, Serializable {
 
         if (args[0].equalsIgnoreCase("answer")) {
             if (args.length > 1 && args[1] != null && args[2] != null) {
+
                 String UUID = player.getUniqueId().toString();
 
                 String answer = "";
@@ -49,6 +64,14 @@ class Commands implements CommandExecutor, Serializable {
                 }
 
                 answer = answer.substring(1);
+
+                List<String> answers = (List<String>) main.getQuestionsConfig().getList(args[1] + ".answers");
+
+                //Shenanigans!!!
+                if (!ifContains(answers, answer)) {
+                    p.sendMessage(main.getConfig().getString("messages.noanswer").replace("&", "§"));
+                    return true;
+                }
 
                 if (config.getInt("playersdatasavetype") == 1) {
                     FileConfiguration playersConfig = main.getPlayersConfig();
@@ -199,11 +222,12 @@ class Commands implements CommandExecutor, Serializable {
             //Pretty bad solution but I haven't find a way to make it more efficient
             //TODO: Make it more efficient
             for (Object answer : questionsConfig.getList(args[1] + ".answers")) {
+                answer = answer.toString().replaceAll("&[0-9A-Fa-f]", "");
                 sum += questionsConfig.getInt(args[1] + ".answersresults." + answer);
             }
 
             for (Object answer : questionsConfig.getList(args[1] + ".answers")) {
-                int votes = questionsConfig.getInt(args[1] + ".answersresults." + answer);
+                int votes = questionsConfig.getInt(args[1] + ".answersresults." + answer.toString().replaceAll("&[0-9A-Fa-f]", ""));
                 double percent = 0;
                 if (votes != 0) {
                     percent = (100 * votes) / sum;
