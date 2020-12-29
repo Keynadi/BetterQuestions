@@ -35,13 +35,13 @@ messages:
 
   nopermissions: "&cYou don't have permissions to do that"
 
-  help: "&fBetter&bQuestions &fHelp\n&f/bq create - &bcreate new question\n&f/bq on|off - &bturn on/off plugin notifies for player\n&f/bq rl - &breload configuration file\n&f/bq view - &bview question statistic"
+  help: "&fBetter&bQuestions &fHelp\n&f/bq on|off - &bturn on/off plugin notifies for player\n&f/bq rl - &breload configuration file\n&f/bq view [ID] - &bview question statistic\n&f/bq list - &blist of questions\n&f/bq delete [ID] - &bdelete question\n&f/bq toggle [ID] - &btoggle question broadcasting"
 
   usage:
     view: "/bq view [questionNumber]"
-    update: "/bq update [questionNumber]" #Remove all answers correspond to that question
-    delete: "/bq delete [questionNumber]" #Remove question
-    toggle: "/bq toggle [questionNumber]"
+    update: "/bq update [questionID]" #Remove all answers correspond to that question
+    delete: "/bq delete [questionID]" #Remove question
+    toggle: "/bq toggle [questionID]"
 
 
 #Is questions broadcasting?

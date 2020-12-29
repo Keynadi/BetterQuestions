@@ -20,7 +20,6 @@ public class TabCompletion implements TabCompleter {
                 commands.add("off");
                 commands.add("reload");
                 commands.add("view");
-                commands.add("create");
                 commands.add("update");
                 commands.add("delete");
                 commands.add("list");
