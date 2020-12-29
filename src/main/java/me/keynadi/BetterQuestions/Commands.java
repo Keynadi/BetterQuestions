@@ -1,20 +1,21 @@
 package me.keynadi.BetterQuestions;
 
-import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.configuration.Configuration;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 
 import java.io.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Scanner;
 
 class Commands implements CommandExecutor, Serializable {
     private BQMain main;
-
-    private String sender;
 
     public Commands(BQMain main) {
         this.main = main;
@@ -32,22 +33,17 @@ class Commands implements CommandExecutor, Serializable {
     }
 
     @Override
-    public boolean onCommand(CommandSender p, Command command, String s, String[] args) {
-
-        Player player = (Player) p;
+    public boolean onCommand(CommandSender commandSender, Command command, String s, String[] args) {
 
         Configuration config = main.getConfig();
 
-        if (args.length == 0) {
-            if (!p.hasPermission("betterquestions.admin")) {
-                p.sendMessage(config.getString("messages.nopermissions").replace("&", "§"));
+        if (args[0].equalsIgnoreCase("answer")) {
+            if (commandSender instanceof ConsoleCommandSender) {
+                sendMessage(commandSender, "messages.onlyPlayerCanAnswer");
                 return true;
             }
-            return false;
-        }
-
-        if (args[0].equalsIgnoreCase("answer")) {
             if (args.length > 1 && args[1] != null && args[2] != null) {
+                Player player = (Player) commandSender;
 
                 String UUID = player.getUniqueId().toString();
 
@@ -64,9 +60,11 @@ class Commands implements CommandExecutor, Serializable {
 
                 List<String> answers = (List<String>) main.getQuestionsConfig().getList(args[1] + ".answers");
 
+                FileConfiguration questionsConfig = main.getQuestionsConfig();
+
                 //Shenanigans!!!
-                if (!ifContains(answers, answer)) {
-                    p.sendMessage(main.getConfig().getString("messages.noanswer").replace("&", "§"));
+                if (!ifContains(answers, answer) || !questionsConfig.getBoolean(args[1] + ".enabled")) {
+                    sendMessage(player, "messages.noanswer");
                     return true;
                 }
 
@@ -77,7 +75,7 @@ class Commands implements CommandExecutor, Serializable {
                     if (playerslist == null) playerslist = new ArrayList<>();
 
                     if (playerslist != null && playerslist.contains(UUID)) {
-                        p.sendMessage(config.getString("messages.alreadyvoted").replace("&", "§"));
+                        sendMessage(player, "messages.alreadyvoted");
                         return true;
                     }
 
@@ -108,7 +106,7 @@ class Commands implements CommandExecutor, Serializable {
                         }
                     }
                     if (questionsList.contains(args[1])) {
-                        p.sendMessage(config.getString("messages.alreadyvoted").replace("&", "§"));
+                        sendMessage(player, "messages.alreadyvoted");
                         return true;
                     } else {
                         questionsList.add(args[1]);
@@ -128,8 +126,6 @@ class Commands implements CommandExecutor, Serializable {
                     }
                 }
 
-                FileConfiguration questionsConfig = main.getQuestionsConfig();
-
                 questionsConfig.set(args[1] + ".answersresults." + answer, questionsConfig.getInt(args[1] + ".answersresults." + answer) + 1);
 
                 try {
@@ -138,45 +134,29 @@ class Commands implements CommandExecutor, Serializable {
                     e.printStackTrace();
                 }
 
-                p.sendMessage(config.getString("messages.successfulvote").replace("&", "§"));
+                sendMessage(player, "messages.successfulvote");
             }
             return true;
         }
 
-        if (!p.hasPermission("betterquestions.admin")) {
-            p.sendMessage(config.getString("messages.nopermissions").replace("&", "§"));
+        if (!commandSender.hasPermission("betterquestions.admin")) {
+            sendMessage(commandSender, "messages.nopermissions");
             return true;
-        }
-
-        if (args.length == 0) {
-            return false;
         }
 
         if (args[0].equalsIgnoreCase("help") || args[0].equalsIgnoreCase("?")) {
-            p.sendMessage(config.getString("messages.help").replace("&", "§"));
+            sendMessage(commandSender, "messages.help");
             return true;
         }
-        if (args[0].equalsIgnoreCase("create")) {
-
-            sender = p.getName();
-            UUID UUID = Bukkit.getPlayer(sender).getUniqueId();
-
-            BQMain.waitingChatMessage.add(UUID);
-
-            Bukkit.getPlayer(UUID).sendTitle(config.getString("messages.title.sendquestionchat").replace("&", "§"), "", 10, 80, 10);
-
-            return true;
-        }
-
 
         if (args[0].equalsIgnoreCase("on")) {
             if (!config.getBoolean("active")) {
                 config.set("active", true);
                 main.saveConfig();
-                new Timer(main).runTaskTimer(main, 0, config.getInt("delay"));
-                p.sendMessage(config.getString("messages.nowbroadcasting").replace("&", "§"));
+                new Timer().runTaskTimer(main, 0, config.getInt("delay"));
+                sendMessage(commandSender, "messages.nowbroadcasting");
             } else {
-                p.sendMessage(config.getString("messages.alreadybroadcasting").replace("&", "§"));
+                sendMessage(commandSender, "messages.alreadybroadcasting");
             }
             return true;
         }
@@ -184,9 +164,9 @@ class Commands implements CommandExecutor, Serializable {
             if (config.getBoolean("active")) {
                 config.set("active", false);
                 main.saveConfig();
-                p.sendMessage(config.getString("messages.nolongerbroadcasting").replace("&", "§"));
+                sendMessage(commandSender, "messages.nolongerbroadcasting");
             } else {
-                p.sendMessage(config.getString("messages.alreadystoppedbroadcasting").replace("&", "§"));
+                sendMessage(commandSender, "messages.alreadystoppedbroadcasting");
             }
             return true;
         }
@@ -195,20 +175,20 @@ class Commands implements CommandExecutor, Serializable {
             main.reloadConfig();
             main.reloadQuestionConfig();
             main.reloadPlayersConfig();
-            p.sendMessage(config.getString("messages.reload").replace("&", "§"));
+            sendMessage(commandSender, "messages.reload");
             return true;
         }
 
         if (args[0].equalsIgnoreCase("view")) {
             if (args.length < 2) {
-                p.sendMessage(config.getString("messages.usage.view").replace("&", "§"));
+                sendMessage(commandSender, "messages.usage.view");
                 return true;
             }
 
             FileConfiguration questionsConfig = main.getQuestionsConfig();
 
             if (questionsConfig.getString(args[1] + ".question") == null) {
-                p.sendMessage(config.getString("messages.questionnotfound").replace("&", "§"));
+                sendMessage(commandSender, "messages.questionnotfound");
                 return true;
             }
 
@@ -221,15 +201,15 @@ class Commands implements CommandExecutor, Serializable {
 
             List<String> alreadyLoopedAnswers = new ArrayList<>(); //Fixes votes doubling when there is two answers with different colors. This answers still counts as one but in /bq view it was a two answers with same number of votes
             for (Object answer : questionsConfig.getList(args[1] + ".answers")) {
-                answer = answer.toString().replaceAll("&[0-9A-Fa-f]", "");
-                if (alreadyLoopedAnswers == null || !alreadyLoopedAnswers.contains(answer)) {
+                answer = answer.toString().replaceAll("&[0-9A-FK-ORa-fk-or]", "");
+                if (!alreadyLoopedAnswers.contains(answer)) {
                     sum += questionsConfig.getInt(args[1] + ".answersresults." + answer);
                     alreadyLoopedAnswers.add(answer.toString());
                 }
             }
 
             for (Object answer : questionsConfig.getList(args[1] + ".answers")) {
-                int votes = questionsConfig.getInt(args[1] + ".answersresults." + answer.toString().replaceAll("&[0-9A-Fa-f]", ""));
+                int votes = questionsConfig.getInt(args[1] + ".answersresults." + answer.toString().replaceAll("&[0-9A-FK-ORa-fk-or]", ""));
                 double percent = 0;
                 if (votes != 0) {
                     percent = (100 * votes) / sum;
@@ -237,70 +217,136 @@ class Commands implements CommandExecutor, Serializable {
                 allMessage += answer + " &f[" + votes + "] [" + percent + "%]\n\n";
             }
 
-            p.sendMessage(allMessage.replace("&", "§"));
+            commandSender.sendMessage(allMessage.replace("&", "§"));
             return true;
         }
 
         if (args[0].equalsIgnoreCase("update")) {
             if (args.length < 2) {
-                p.sendMessage(config.getString("messages.usage.update").replace("&", "§"));
+                sendMessage(commandSender, "messages.usage.update");
                 return true;
             }
 
-            if (main.getConfig().getInt("playersdatasavetype") == 1) {
-                FileConfiguration playersConfig = main.getPlayersConfig();
+            removeQuestionAnswers(args, commandSender);
 
-                playersConfig.set(args[1] + ".players", "");
-                try {
-                    playersConfig.save(main.getDataFolder() + File.separator + "players.yml");
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
-                p.sendMessage(main.getConfig().getString("messages.updatesuccessful").replace("&", "§"));
-                return true;
-
-            } else {
-                File dir = new File(main.getDataFolder() + File.separator + "players");
-                File[] directoryListing = dir.listFiles();
-                if (directoryListing != null) {
-                    for (File child : directoryListing) {
-                        try {
-
-                            List<String> answeredQuestionsList = new ArrayList<>();
-                            Scanner scanner = null;
-                            try {
-                                scanner = new Scanner(child);
-                            } catch (FileNotFoundException e) {
-                                e.printStackTrace();
-                            }
-
-                            while (scanner.hasNextLine()) {
-                                answeredQuestionsList.add(scanner.nextLine());
-                            }
-
-                            Collections.sort(answeredQuestionsList);
-
-                            FileWriter stream = new FileWriter(child);
-                            BufferedWriter out = new BufferedWriter(stream);
-
-                            for (String line : answeredQuestionsList) {
-                                if (line.equalsIgnoreCase(args[1])) continue;
-                                out.write(line);
-                                out.newLine();
-                            }
-                            out.close();
-                            stream.close();
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-                p.sendMessage(main.getConfig().getString("messages.updatesuccessful").replace("&", "§"));
-                return true;
-            }
+            return true;
         }
+
+        if (args[0].equalsIgnoreCase("delete")) {
+            if (args.length < 2) {
+                sendMessage(commandSender, "messages.usage.delete");
+                return true;
+            }
+
+            FileConfiguration questionConfig = main.getQuestionsConfig();
+
+            questionConfig.set(args[1], null);
+            try {
+                questionConfig.save(main.getDataFolder() + File.separator + "questions.yml");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            removeQuestionAnswers(args, commandSender);
+
+
+            return true;
+        }
+
+        if (args[0].equalsIgnoreCase("toggle")) {
+            if (args.length < 2) {
+                sendMessage(commandSender, "messages.usage.toggle");
+                return true;
+            }
+
+            FileConfiguration questionConfig = main.getQuestionsConfig();
+
+            if (questionConfig.getBoolean(args[1] + ".enabled")) {
+                sendMessage(commandSender, "messages.questionNowDisabled");
+                questionConfig.set(args[1] + ".enabled", false);
+            } else {
+                sendMessage(commandSender, "messages.questionNowEnabled");
+                questionConfig.set(args[1] + ".enabled", true);
+            }
+            try {
+                questionConfig.save(main.getDataFolder() + File.separator + "questions.yml");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return true;
+        }
+
+        if (args[0].equalsIgnoreCase("list")) {
+            Configuration questionConfig = main.getQuestionsConfig();
+
+            for (String question : questionConfig.getConfigurationSection("").getKeys(false)) {
+                String status = "";
+                if (questionConfig.getBoolean(question + ".enabled")) {
+                    status = "&aEnabled";
+                } else {
+                    status = "&cDisabled";
+                }
+                commandSender.sendMessage(("&b(" + question + ") &f(" + status + "&f) " + questionConfig.getString(question + ".question")).replace("&", "§"));
+            }
+            return true;
+        }
+
         return false;
     }
 
+    public void removeQuestionAnswers(String[] args, CommandSender p) {
+        if (main.getConfig().getInt("playersdatasavetype") == 1) {
+            FileConfiguration playersConfig = main.getPlayersConfig();
+
+            playersConfig.set(args[1] + ".players", "");
+            try {
+                playersConfig.save(main.getDataFolder() + File.separator + "players.yml");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            sendMessage(p, "messages.updatesuccessful");
+        } else {
+            File dir = new File(main.getDataFolder() + File.separator + "players");
+            File[] directoryListing = dir.listFiles();
+            if (directoryListing != null) {
+                for (File child : directoryListing) {
+                    try {
+
+                        List<String> answeredQuestionsList = new ArrayList<>();
+                        Scanner scanner = null;
+                        try {
+                            scanner = new Scanner(child);
+                        } catch (FileNotFoundException e) {
+                            e.printStackTrace();
+                        }
+
+                        while (scanner.hasNextLine()) {
+                            answeredQuestionsList.add(scanner.nextLine());
+                        }
+
+                        Collections.sort(answeredQuestionsList);
+
+                        FileWriter stream = new FileWriter(child);
+                        BufferedWriter out = new BufferedWriter(stream);
+
+                        for (String line : answeredQuestionsList) {
+                            if (line.equalsIgnoreCase(args[1])) continue;
+                            out.write(line);
+                            out.newLine();
+                        }
+                        out.close();
+                        stream.close();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            sendMessage(p, "messages.updatesuccessful");
+        }
+    }
+
+
+    public void sendMessage(CommandSender sender, String path) {
+        sender.sendMessage(main.getConfig().getString(path).replace("&", "§"));
+    }
 }

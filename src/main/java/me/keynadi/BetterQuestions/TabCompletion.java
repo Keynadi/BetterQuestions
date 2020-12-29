@@ -22,14 +22,20 @@ public class TabCompletion implements TabCompleter {
                 commands.add("view");
                 commands.add("create");
                 commands.add("update");
+                commands.add("delete");
+                commands.add("list");
+                commands.add("toggle");
                 return commands;
             }
 
         }
 
         if (strings.length == 2) {
-            if (strings[0].equalsIgnoreCase("view") || strings[0].equalsIgnoreCase("update")) {
-                commands.add("[questionNumber]");
+            if (strings[0].equalsIgnoreCase("view")
+                    || strings[0].equalsIgnoreCase("update")
+                    || strings[0].equalsIgnoreCase("delete")
+                    || strings[0].equalsIgnoreCase("toggle")) {
+                commands.add("[questionID]");
                 return commands;
             }
         }

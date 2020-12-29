@@ -7,17 +7,16 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.UUID;
 
 public class BQMain extends JavaPlugin {
 
-    public static ArrayList<UUID> waitingChatMessage = new ArrayList<>();
     private File config;
     private File questionsConfigFile;
     private FileConfiguration questionsConfig;
     private File playersConfigFile;
     private FileConfiguration playersConfig;
+
+    public static BQMain plugin;
 
     @Override
     public void onEnable() {
@@ -32,13 +31,15 @@ public class BQMain extends JavaPlugin {
 
         createCustomConfigs();
 
-        if (getConfig().getBoolean("active")) {
-            new Timer(this).runTaskTimer(this, 0, this.getConfig().getInt("delay"));
-        }
+        plugin = this;
 
         getCommand("betterquestions").setExecutor(new Commands(this));
         getCommand("betterquestions").setTabCompleter(new TabCompletion());
-        getServer().getPluginManager().registerEvents(new Listener(this), this);
+
+        if (getConfig().getBoolean("active")) {
+            new Timer().runTaskTimer(this, 0, this.getConfig().getInt("delay"));
+        }
+
     }
 
     public void onDisable() {
@@ -79,11 +80,11 @@ public class BQMain extends JavaPlugin {
     }
 
     public FileConfiguration getQuestionsConfig() {
-        return this.questionsConfig;
+        return questionsConfig;
     }
 
     public FileConfiguration getPlayersConfig() {
-        return this.playersConfig;
+        return playersConfig;
     }
 
     public void reloadQuestionConfig() {

@@ -14,33 +14,33 @@ public class JsonFormatter {
         JsonFormatter.main = main;
     }
 
-    public static void format(Player p, int questionCount) {
+    public static void format(Player p, String questionID) {
 
         Configuration questionConfig = main.getQuestionsConfig();
+
+        if (questionConfig.get(questionID + ".answers") == null) {
+            return;
+        }
 
         TextComponent mainstr = new TextComponent();
         TextComponent answersText = new TextComponent();
 
         int delimitercount = 1; //Used to count until last needed delimiter. Fixing "Yes|No|" issue.
 
-        if (questionConfig.get(questionCount + ".answers") == null) {
-            return;
-        }
-
-        for (Object answer : questionConfig.getList(questionCount + ".answers")) {
+        for (Object answer : questionConfig.getList(questionID + ".answers")) {
 
             TextComponent text = new TextComponent(answer.toString().replace("&", "§"));
-            text.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/bq answer " + questionCount + " " + answer.toString()));
+            text.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/bq answer " + questionID + " " + answer.toString()));
             text.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder(main.getConfig().getString("messages.hoveranswertext").replace("%answer%", answer.toString()).replace("&", "§")).create()));
 
             answersText.addExtra(text);
 
-            if (delimitercount != questionConfig.getList(questionCount + ".answers").size())
+            if (delimitercount != questionConfig.getList(questionID + ".answers").size())
                 answersText.addExtra(main.getConfig().getString("delimiter").replace("&", "§"));
             delimitercount++;
         }
 
-        String layout = (main.getConfig().getString("layout").replace("%question%", "§f" + questionConfig.getString(questionCount + ".question")).replace("&", "§"));
+        String layout = (main.getConfig().getString("layout").replace("%question%", "§f" + questionConfig.getString(questionID + ".question")).replace("&", "§"));
         String[] layoutCutArray = layout.split("%answers%");
 
         mainstr.addExtra(layoutCutArray[0]);

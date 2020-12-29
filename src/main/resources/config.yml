@@ -24,26 +24,24 @@ messages:
   nolongerbroadcasting: "&aQuestions no longer broadcasting."
   alreadybroadcasting: "&cNothing happened. Questions already broadcasting."
   alreadystoppedbroadcasting: "&cNothing happened. Questions weren't broadcasting."
-  noanswer: "&cThe is not such answer to that question"
+  noanswer: "&cThere is no such answer to that question"
   reload: "&aConfig has been reloaded!"
   hoveranswertext: "&fSend &b%answer% &fas an answer." #Answer in chat hover
   questionnotfound: "&cThere is no question with this number"
   updatesuccessful: "&aUpdate successful"
+  questionNowDisabled: "&cThis question is now removed from broadcast pool"
+  questionNowEnabled: "&aThis question is now added to broadcast pool"
+  onlyPlayerCanAnswer: "&cOnly players can answer questions!"
 
   nopermissions: "&cYou don't have permissions to do that"
 
   help: "&fBetter&bQuestions &fHelp\n&f/bq create - &bcreate new question\n&f/bq on|off - &bturn on/off plugin notifies for player\n&f/bq rl - &breload configuration file\n&f/bq view - &bview question statistic"
 
-  title:
-    sendquestionchat: "&aSend your question in chat"
-    sendasnwerschat: "&aSend your answers in chat"
-    answerssecondline: "Example: Yes, No, Maybe"
-    questioncreated: "&aQuestion has been created!"
-    questioncreatedsecondline: "/bq on - to turn on broadcasting."
-
   usage:
     view: "/bq view [questionNumber]"
     update: "/bq update [questionNumber]" #Remove all answers correspond to that question
+    delete: "/bq delete [questionNumber]" #Remove question
+    toggle: "/bq toggle [questionNumber]"
 
 
 #Is questions broadcasting?

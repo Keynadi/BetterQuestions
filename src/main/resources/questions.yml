@@ -1,4 +1,5 @@
 1:
+  enabled: true
   question: "Do you like BetterQuestions?"
   answers:
     - "Yes :)"

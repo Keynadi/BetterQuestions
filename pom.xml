@@ -27,7 +27,6 @@
         </dependency>
     </dependencies>
 
-    <!-- Shading BStats -->
     <build>
         <plugins>
 
