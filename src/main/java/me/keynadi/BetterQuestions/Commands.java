@@ -35,6 +35,14 @@ class Commands implements CommandExecutor, Serializable {
     @Override
     public boolean onCommand(CommandSender commandSender, Command command, String s, String[] args) {
 
+        if (args.length == 0) {
+            if (!commandSender.hasPermission("betterquestions.admin")) {
+                sendMessage(commandSender, "messages.nopermissions");
+                return true;
+            }
+            return false;
+        }
+
         Configuration config = main.getConfig();
 
         if (args[0].equalsIgnoreCase("answer")) {
