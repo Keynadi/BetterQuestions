@@ -9,20 +9,17 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 class Commands implements CommandExecutor, Serializable {
     private BQMain main;
 
-    public Commands(BQMain main) {
+    Commands(BQMain main) {
         this.main = main;
     }
 
     //shenanigans!!!
-    public static boolean ifContains(List<String> list, String string) {
+    private static boolean ifContains(List<String> list, String string) {
         for (String line : list) {
             line = line.replaceAll("&[0-9A-Fa-f]", "");
             if (line.equalsIgnoreCase(string)) {
@@ -32,6 +29,7 @@ class Commands implements CommandExecutor, Serializable {
         return false;
     }
 
+    @SuppressWarnings("NullableProblems")
     @Override
     public boolean onCommand(CommandSender commandSender, Command command, String s, String[] args) {
 
@@ -55,34 +53,37 @@ class Commands implements CommandExecutor, Serializable {
 
                 String UUID = player.getUniqueId().toString();
 
-                String answer = "";
+                StringBuilder answer = new StringBuilder();
 
                 int argscount = 2;
 
                 while (argscount <= (args.length - 1)) {
-                    answer = answer + " " + args[argscount];
+                    answer.append(" ").append(args[argscount]);
                     argscount++;
                 }
 
-                answer = answer.substring(1);
+                answer = new StringBuilder(answer.substring(1));
 
+                @SuppressWarnings("unchecked")
                 List<String> answers = (List<String>) main.getQuestionsConfig().getList(args[1] + ".answers");
 
                 FileConfiguration questionsConfig = main.getQuestionsConfig();
 
                 //Shenanigans!!!
-                if (!ifContains(answers, answer) || !questionsConfig.getBoolean(args[1] + ".enabled")) {
+                assert answers != null;
+                if (!ifContains(answers, answer.toString()) || !questionsConfig.getBoolean(args[1] + ".enabled")) {
                     sendMessage(player, "messages.noanswer");
                     return true;
                 }
 
                 if (config.getInt("playersdatasavetype") == 1) {
                     FileConfiguration playersConfig = main.getPlayersConfig();
+                    @SuppressWarnings("unchecked")
                     List<Object> playerslist = (List<Object>) playersConfig.getList(args[1] + ".players");
 
                     if (playerslist == null) playerslist = new ArrayList<>();
 
-                    if (playerslist != null && playerslist.contains(UUID)) {
+                    if (playerslist.contains(UUID)) {
                         sendMessage(player, "messages.alreadyvoted");
                         return true;
                     }
@@ -109,6 +110,7 @@ class Commands implements CommandExecutor, Serializable {
                             e.printStackTrace();
                         }
 
+                        assert scanner != null;
                         while (scanner.hasNextLine()) {
                             questionsList.add(scanner.nextLine());
                         }
@@ -200,7 +202,7 @@ class Commands implements CommandExecutor, Serializable {
                 return true;
             }
 
-            String allMessage = ("\n\n" + questionsConfig.getString(args[1] + ".question") + "\n\n&f");
+            StringBuilder allMessage = new StringBuilder(("\n\n" + questionsConfig.getString(args[1] + ".question") + "\n\n&f"));
 
             int sum = 0;
 
@@ -208,7 +210,7 @@ class Commands implements CommandExecutor, Serializable {
             //TODO: Make it more efficient
 
             List<String> alreadyLoopedAnswers = new ArrayList<>(); //Fixes votes doubling when there is two answers with different colors. This answers still counts as one but in /bq view it was a two answers with same number of votes
-            for (Object answer : questionsConfig.getList(args[1] + ".answers")) {
+            for (Object answer : Objects.requireNonNull(questionsConfig.getList(args[1] + ".answers"))) {
                 answer = answer.toString().replaceAll("&[0-9A-FK-ORa-fk-or]", "");
                 if (!alreadyLoopedAnswers.contains(answer)) {
                     sum += questionsConfig.getInt(args[1] + ".answersresults." + answer);
@@ -216,16 +218,16 @@ class Commands implements CommandExecutor, Serializable {
                 }
             }
 
-            for (Object answer : questionsConfig.getList(args[1] + ".answers")) {
-                int votes = questionsConfig.getInt(args[1] + ".answersresults." + answer.toString().replaceAll("&[0-9A-FK-ORa-fk-or]", ""));
+            for (Object answer : Objects.requireNonNull(questionsConfig.getList(args[1] + ".answers"))) {
+                double votes = questionsConfig.getInt(args[1] + ".answersresults." + answer.toString().replaceAll("&[0-9A-FK-ORa-fk-or]", ""));
                 double percent = 0;
                 if (votes != 0) {
                     percent = (100 * votes) / sum;
                 }
-                allMessage += answer + " &f[" + votes + "] [" + percent + "%]\n\n";
+                allMessage.append(answer).append(" &f[").append(votes).append("] [").append(percent).append("%]\n\n");
             }
 
-            commandSender.sendMessage(allMessage.replace("&", "§"));
+            commandSender.sendMessage(allMessage.toString().replace("&", "§"));
             return true;
         }
 
@@ -287,8 +289,8 @@ class Commands implements CommandExecutor, Serializable {
         if (args[0].equalsIgnoreCase("list")) {
             Configuration questionConfig = main.getQuestionsConfig();
 
-            for (String question : questionConfig.getConfigurationSection("").getKeys(false)) {
-                String status = "";
+            for (String question : Objects.requireNonNull(questionConfig.getConfigurationSection("")).getKeys(false)) {
+                String status;
                 if (questionConfig.getBoolean(question + ".enabled")) {
                     status = "&aEnabled";
                 } else {
@@ -302,7 +304,7 @@ class Commands implements CommandExecutor, Serializable {
         return false;
     }
 
-    public void removeQuestionAnswers(String[] args, CommandSender p) {
+    private void removeQuestionAnswers(String[] args, CommandSender p) {
         if (main.getConfig().getInt("playersdatasavetype") == 1) {
             FileConfiguration playersConfig = main.getPlayersConfig();
 
@@ -328,6 +330,7 @@ class Commands implements CommandExecutor, Serializable {
                             e.printStackTrace();
                         }
 
+                        assert scanner != null;
                         while (scanner.hasNextLine()) {
                             answeredQuestionsList.add(scanner.nextLine());
                         }
@@ -354,7 +357,7 @@ class Commands implements CommandExecutor, Serializable {
     }
 
 
-    public void sendMessage(CommandSender sender, String path) {
-        sender.sendMessage(main.getConfig().getString(path).replace("&", "§"));
+    private void sendMessage(CommandSender sender, String path) {
+        sender.sendMessage(Objects.requireNonNull(main.getConfig().getString(path)).replace("&", "§"));
     }
 }

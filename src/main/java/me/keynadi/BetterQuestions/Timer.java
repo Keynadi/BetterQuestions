@@ -6,10 +6,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
-import java.util.Set;
+import java.util.*;
 
 public class Timer extends BukkitRunnable {
 
@@ -26,11 +23,11 @@ public class Timer extends BukkitRunnable {
                 return;
             }
 
-            Set<String> questionsIds = questionsConfig.getConfigurationSection("").getKeys(false);
+            Set<String> questionsIds = Objects.requireNonNull(questionsConfig.getConfigurationSection("")).getKeys(false);
 
             for (Player p : Bukkit.getOnlinePlayers()) {
                 if (p.hasPermission("betterquestions.ignore")) {
-                    return;
+                    continue;
                 }
                 if (BQMain.plugin.getConfig().getInt("playersdatasavetype") == 1) {
 
@@ -40,9 +37,11 @@ public class Timer extends BukkitRunnable {
                             continue;
                         }
 
+                        @SuppressWarnings("unchecked")
                         List<Object> playersList = (List<Object>) playersConfig.getList(questionID + ".players");
 
                         if (playersList == null || !playersList.contains(p.getUniqueId().toString())) {
+
                             JsonFormatter.format(p, questionID);
                             break;
                         }

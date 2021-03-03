@@ -7,34 +7,38 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Objects;
 
 public class BQMain extends JavaPlugin {
 
-    private File config;
     private File questionsConfigFile;
     private FileConfiguration questionsConfig;
     private File playersConfigFile;
     private FileConfiguration playersConfig;
 
-    public static BQMain plugin;
+    static BQMain plugin;
 
     @Override
     public void onEnable() {
         new JsonFormatter(this);
 
-        config = new File(getDataFolder() + File.separator + "config.yml");
+        File config = new File(getDataFolder() + File.separator + "config.yml");
 
         if (!config.exists()) {
             this.getConfig().options().copyDefaults(true);
             this.saveDefaultConfig();
         }
 
-        createCustomConfigs();
+        try {
+            createCustomConfigs();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         plugin = this;
 
-        getCommand("betterquestions").setExecutor(new Commands(this));
-        getCommand("betterquestions").setTabCompleter(new TabCompletion());
+        Objects.requireNonNull(getCommand("betterquestions")).setExecutor(new Commands(this));
+        Objects.requireNonNull(getCommand("betterquestions")).setTabCompleter(new TabCompletion());
 
         if (getConfig().getBoolean("active")) {
             new Timer().runTaskTimer(this, 0, this.getConfig().getInt("delay"));
@@ -46,10 +50,13 @@ public class BQMain extends JavaPlugin {
         getLogger().info("Plugin BetterQuestions by Keynadi turned off");
     }
 
-    public void createCustomConfigs() {
+    private void createCustomConfigs() throws IOException {
         questionsConfigFile = new File(getDataFolder(), "questions.yml");
         if (!questionsConfigFile.exists()) {
-            questionsConfigFile.getParentFile().mkdirs();
+            boolean mkdir = questionsConfigFile.getParentFile().mkdirs();
+            if (!mkdir) {
+                throw new IOException("Cant make a folder");
+            }
             saveResource("questions.yml", false);
         }
 
@@ -62,13 +69,19 @@ public class BQMain extends JavaPlugin {
 
         playersConfigFile = new File(getDataFolder(), "players.yml");
         if (!playersConfigFile.exists()) {
-            playersConfigFile.getParentFile().mkdirs();
+            boolean mkdir = playersConfigFile.getParentFile().mkdirs();
+            if (!mkdir) {
+                throw new IOException("Cant make a folder");
+            }
             saveResource("players.yml", false);
         }
 
         File playerFolder = new File(getDataFolder(), "players");
         if (!playerFolder.exists()) {
-            playerFolder.mkdir();
+            boolean mkdir = playerFolder.mkdir();
+            if (!mkdir) {
+                throw new IOException("Cant make a folder");
+            }
         }
 
         playersConfig = new YamlConfiguration();
@@ -79,15 +92,15 @@ public class BQMain extends JavaPlugin {
         }
     }
 
-    public FileConfiguration getQuestionsConfig() {
+    FileConfiguration getQuestionsConfig() {
         return questionsConfig;
     }
 
-    public FileConfiguration getPlayersConfig() {
+    FileConfiguration getPlayersConfig() {
         return playersConfig;
     }
 
-    public void reloadQuestionConfig() {
+    void reloadQuestionConfig() {
         try {
             questionsConfig = new YamlConfiguration();
             questionsConfig.load(questionsConfigFile);
@@ -96,7 +109,7 @@ public class BQMain extends JavaPlugin {
         }
     }
 
-    public void reloadPlayersConfig() {
+    void reloadPlayersConfig() {
         try {
             playersConfig = new YamlConfiguration();
             playersConfig.load(playersConfigFile);

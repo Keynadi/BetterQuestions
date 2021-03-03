@@ -1,7 +1,7 @@
 main: me.keynadi.BetterQuestions.BQMain
 name: BetterQuestions
 author: Keynadi
-version: 2.4
+version: 2.5
 commands:
   betterquestions:
     aliases: [bq]

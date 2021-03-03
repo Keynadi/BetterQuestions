@@ -9,6 +9,7 @@ import java.util.List;
 
 public class TabCompletion implements TabCompleter {
 
+    @SuppressWarnings("NullableProblems")
     @Override
     public List<String> onTabComplete(CommandSender commandSender, Command command, String s, String[] strings) {
         List<String> commands = new ArrayList<>();
